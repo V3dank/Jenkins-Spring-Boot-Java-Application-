@@ -1,0 +1,24 @@
+---
+- name: Deploy Spring PetClinic App
+  hosts: web
+  become: yes
+
+  tasks:
+    - name: Install Java (if not installed)
+      apt:
+        name: openjdk-17-jdk
+        state: present
+        update_cache: yes
+
+    - name: Copy JAR file to server
+      copy:
+        src: target/spring-petclinic-*.jar
+        dest: /opt/spring-petclinic.jar
+        mode: '0755'
+
+    - name: Kill existing Spring Boot app if running
+      shell: "pkill -f spring-petclinic || true"
+
+    - name: Start Spring Boot app
+      shell: "nohup java -jar /opt/spring-petclinic.jar > /opt/petclinic.log 2>&1 &"
+
