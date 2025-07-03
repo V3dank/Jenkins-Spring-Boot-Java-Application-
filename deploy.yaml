@@ -40,7 +40,7 @@
 
     - name: Download JAR from S3 to EC2
       amazon.aws.aws_s3:
-        bucket: jenkins-s3-prince
+        bucket: terraform-vedank-bucket
         object: spring-petclinic-3.5.0-SNAPSHOT.jar
         dest: /home/ec2-user/spring-petclinic-3.5.0-SNAPSHOT.jar
         mode: get
