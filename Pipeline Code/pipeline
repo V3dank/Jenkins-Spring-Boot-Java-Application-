@@ -1,0 +1,48 @@
+pipeline {
+    agent any
+
+    environment {
+        MAVEN_HOME = tool 'Maven'  // Define this tool in Jenkins Global Tool Configuration
+    }
+
+    stages {
+        stage('Clone Repo') {
+            steps {
+                git branch: 'main', url: 'https://github.com/V3dank/spring-petclinic.git'
+
+            }
+        }
+
+        stage('Build JAR') {
+            steps {
+                sh 'chmod +x mvnw'
+                sh "${MAVEN_HOME}/bin/mvn clean package -DskipTests"
+            }
+        }
+        
+        stage('Upload to S3') {
+            steps {
+                sh '''
+                    # AWS S3 upload settings
+                    aws configure set default.s3.multipart_threshold 10MB
+                    aws configure set default.s3.multipart_chunksize 10MB
+                    aws configure set default.s3.max_concurrent_requests 4
+                '''
+                sh 'aws s3 cp ${WORKSPACE}/target/spring-petclinic-3.5.0-SNAPSHOT.jar s3://terraform-vedank-bucket/'
+                
+            }
+        }
+
+        stage('Deploy') {
+            steps {
+                withCredentials([sshUserPrivateKey(credentialsId: 'ec2-ssh-key', keyFileVariable: 'KEY')]) {
+                    sh '''
+                        export PATH=/Library/Frameworks/Python.framework/Versions/3.13/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/usr/local/sbin
+                        ansible-playbook -i inventory.ini deploy.yaml --private-key=$KEY
+                    '''
+                }
+            }
+        }
+    }
+}
+
