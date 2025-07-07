@@ -16,7 +16,7 @@ pipeline {
         stage('Build JAR') {
             steps {
                 sh 'chmod +x mvnw'
-                sh "${MAVEN_HOME}/bin/mvn clean package -DskipTests"
+                sh "mvn clean package -DskipTests -Dnative.image.skip=true"
             }
         }
         
@@ -37,7 +37,6 @@ pipeline {
             steps {
                 withCredentials([sshUserPrivateKey(credentialsId: 'ec2-ssh-key', keyFileVariable: 'KEY')]) {
                     sh '''
-                        export PATH=/Library/Frameworks/Python.framework/Versions/3.13/bin:/opt/homebrew/bin:/opt/homebrew/sbin:/usr/local/bin:/System/Cryptexes/App/usr/bin:/usr/bin:/bin:/usr/sbin:/sbin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/local/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/bin:/var/run/com.apple.security.cryptexd/codex.system/bootstrap/usr/appleinternal/bin:/usr/local/sbin
                         ansible-playbook -i inventory.ini deploy.yaml --private-key=$KEY
                     '''
                 }
@@ -45,4 +44,3 @@ pipeline {
         }
     }
 }
-
